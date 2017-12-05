@@ -26,37 +26,24 @@ def main():
     train_features, train_label = reader.get_feature_and_label(train, 'diagnosis')
     validation_features, validation_label = reader.get_feature_and_label(validation, 'diagnosis')
     test_features, test_label = reader.get_feature_and_label(test, 'diagnosis')
-    # print(train_features['clump_thickness'], train_features['cell_shape'])
+
     # Parameters
     learning_rate = 0.01
     batch_size = 100 # what is this ? => How many data should we use at once
-    training_epoch = 5 # what is this ? => How many times should we train the model with complete training data
+    training_epoch = 50 # what is this ? => How many times should we train the model with complete training data
     display_step = 1 # what is this ?
     label_values = {2: np.array([1, 0]), 4: np.array([0, 1])}
-    # print(label_values[4])
-    # print(type(train_features))
-    # print(train_label.as_matrix(columns=)) # to converto to numpy arrays
-    # print(train_features.values)
-    # a = pd.Series(train_label.values)
-    # print('a: ', a)
-    # print('lable.ds ', label_values[(val for val in train_label.values)])
-    # print('get_lable', get_label_values_from_label(train_label, label_values))
     # tf Graph input
     x = tf.placeholder(tf.float32, [None, 9]) # there are 9 features, the first one is id which is not a feature
-    y = tf.placeholder(tf.float32, [None, 1])
+    y = tf.placeholder(tf.float32, [None, 2])
     print('x_shape', x.shape, train_features.shape)
-    c = np.split(train_label.values, train_label.size)
-    bb = np.asarray(c)
-    print('y_shape', y.shape, bb.shape)
-    print('bb', bb)
     # Set Model weights
-    W = tf.Variable(tf.zeros([9,1])) # 9 rows and 2 columns
-    b = tf.Variable(tf.zeros([1])) # equivalent to 1 row 2 columns
+    W = tf.Variable(tf.zeros([9,2])) # 9 rows and 2 columns
+    b = tf.Variable(tf.zeros([2])) # equivalent to 1 row 2 columns
 
     # Model
-    # pred = tf.nn.sigmoid(tf.matmul(x, W) + b)
+    pred = tf.nn.softmax(tf.matmul(x, W) + b)
     # pred = tf.nn.softmax_cross_entropy_with_logits(tf.matmul(x, W) + b) # more stable
-    pred = tf.matmul(x, W) + b
 
     # Calculate loss or cost using cross-entropy One very common, very nice
     # function to determine the loss of a model is called "cross-entropy."
@@ -70,7 +57,6 @@ def main():
     #
     # cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(pred), reduction_indices=1))
     cost = tf.reduce_mean(tf.squared_difference(y, pred))
-    # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
 
     # Perform optimization
     optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
@@ -86,9 +72,7 @@ def main():
         for epoch in range(training_epoch):
             # avg_cost = 0
         #     total_batch = train_features.shape[0] / 100
-            _, c = sess.run([optimizer, cost], feed_dict={x: train_features.values, y: bb })
-        #     _, c = sess.run([optimizer, cost], feed_dict={x: train_features.values,
-        #                                                   y: get_label_values_from_label(train_label, label_values)})
+            _, c = sess.run([optimizer, cost], feed_dict={x: train_features.values, y: get_label_values_from_label(train_label, label_values) })
             # avg_cost +=
             if (epoch+1) % display_step == 0:
                 print('Epoch: ', '%04d' % (epoch + 1), 'Cost: ', '{:.9f}'.format(c), 'W=', W.eval(), 'b=', b.eval())
