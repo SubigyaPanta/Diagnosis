@@ -29,14 +29,14 @@ def main():
     test_features, test_label = reader.get_feature_and_label(test, 'diagnosis')
 
     # Parameters
-    learning_rate = 0.001
+    learning_rate = 0.05
     batch_size = 100 # what is this ? => How many data should we use at once
-    training_epoch = 50 # what is this ? => How many times should we train the model with complete training data
+    training_epoch = 1500 # what is this ? => How many times should we train the model with complete training data
     display_step = 1 # what is this ?
     label_values = {2: np.array([1, 0]), 4: np.array([0, 1])}
     # tf Graph input
-    x = tf.placeholder(tf.float32, [None, 9]) # there are 9 features, the first one is id which is not a feature
-    y = tf.placeholder(tf.float32, [None, 2])
+    x = tf.placeholder(tf.float32, [None, 9], 'x_input') # there are 9 features, the first one is id which is not a feature
+    y = tf.placeholder(tf.float32, [None, 2], 'y_input')
     print('x_shape', x.shape, train_features.shape)
     # Set Model weights
     W = tf.Variable(tf.random_normal([9,2])) # 9 rows and 2 columns
@@ -62,12 +62,14 @@ def main():
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
 
     # Perform optimization
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 
     # Initialize the variables
     init = tf.global_variables_initializer()
     # input_x = tf.estimator.inputs.numpy_input_fn()
     # Start training
+    y_labels_as_nparray = get_label_values_from_label(train_label, label_values)
+    print(y_labels_as_nparray)
     with tf.Session() as sess:
         # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
         sess.run(init)
@@ -76,15 +78,24 @@ def main():
         for epoch in range(training_epoch):
             # avg_cost = 0
         #     total_batch = train_features.shape[0] / 100
-            _, c = sess.run([optimizer, cost], feed_dict={x: train_features.values, y: get_label_values_from_label(train_label, label_values) })
+            _, c = sess.run([optimizer, cost], feed_dict={x: train_features.values, y: y_labels_as_nparray })
         #     sess.run(optimizer, feed_dict={x: train_features.values, y: get_label_values_from_label(train_label, label_values)})
             # avg_cost +=
             if (epoch+1) % display_step == 0:
-                print('Epoch: ', '%04d' % (epoch + 1), 'Cost: ', '{:.9f}'.format(c), 'W=', W.eval(), 'b=', b.eval())
-                print(c)
+                print('Epoch: ', '%04d' % (epoch + 1), 'Cost: ', '{:.9f}'.format(c))
 
         print('Optimization Finished!')
-        # print('b=', sess.run(b))
+        print('W=', W.eval(), 'b=', b.eval())
+
+        # Calculate accuracy tf.equal Returns the truth value of (x == y) element-wise.
+        # print(y.name)
+        correct = tf.equal(tf.argmax(pred,1), tf.argmax(y,1) )
+        accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
+        print('correct predictions: ', sess.run(correct, feed_dict={x: test_features.values,
+                                                                    y: get_label_values_from_label(test_label, label_values)}))
+        print('accuracy: ', sess.run(accuracy, feed_dict={x: test_features.values,
+                                                        y: get_label_values_from_label(test_label, label_values)}))
+        # print('accuracy', accuracy.eval())
 
 def get_label_values_from_label(label, label_values)->np:
     y_val = []
