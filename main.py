@@ -30,7 +30,7 @@ def main():
     # Parameters
     learning_rate = 0.01
     batch_size = 100 # what is this ? => How many data should we use at once
-    training_epoch = 5 # what is this ? => How many times should we train the model with complete training data
+    training_epoch = 500 # what is this ? => How many times should we train the model with complete training data
     display_step = 1 # what is this ?
     label_values = {2: np.array([1, 0]), 4: np.array([0, 1])}
     # print(label_values[4])
@@ -73,7 +73,7 @@ def main():
     # cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=y, logits=pred))
 
     # Perform optimization
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+    optimizer = tf.train.AdamOptimizer(learning_rate).minimize(cost)
 
     # Initialize the variables
     init = tf.global_variables_initializer()
@@ -95,6 +95,12 @@ def main():
                 print(c)
 
         print('Optimization Finished!')
+
+        # Evaluate accuracy
+        weight = W.eval();
+        bias = b.eval();
+        yy = np.matmul(test_features, weight) + bias;
+        print('test:', yy, test_label);
 
 def get_label_values_from_label(label, label_values)->np:
     y_val = []
